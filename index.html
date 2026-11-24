@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test · Fundamentos de Podología (UCLM)</title>
+  <meta name="description" content="Aplicación de estudio con preguntas tipo test de Fundamentos de Podología (UCLM).">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦶</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // Aplica el tema antes de pintar para evitar parpadeo
+    (function () {
+      var t = localStorage.getItem("tema");
+      if (!t) t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro";
+      document.documentElement.dataset.tema = t;
+    })();
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <button class="marca" id="btn-inicio" title="Volver al inicio">
+      <span class="logo">🦶</span>
+      <span><strong>Fundamentos de Podología</strong><small>UCLM · Talavera</small></span>
+    </button>
+    <button class="btn-icono" id="btn-tema" title="Cambiar modo claro/oscuro" aria-label="Cambiar modo claro/oscuro">🌙</button>
+  </header>
+
+  <main id="app">
+    <!-- ================= INICIO ================= -->
+    <section id="vista-inicio" class="vista">
+      <div class="hero">
+        <h1>Practica el test</h1>
+        <p class="muted">Preguntas aleatorias sacadas de los Kahoots, cuestionarios y temario de la asignatura.</p>
+      </div>
+
+      <div class="tarjeta">
+        <h2>1 · Modo</h2>
+        <div class="modos">
+          <label class="modo">
+            <input type="radio" name="modo" value="estudio" checked>
+            <div>
+              <strong>📘 Modo estudio</strong>
+              <span>Corrige al momento cada pregunta y explica la respuesta. Cronómetro libre.</span>
+            </div>
+          </label>
+          <label class="modo">
+            <input type="radio" name="modo" value="examen">
+            <div>
+              <strong>📝 Modo examen</strong>
+              <span>Sin correcciones hasta entregar. Nota sobre 10 y límite de 1 h 30 min.</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="tarjeta">
+        <div class="fila-titulo">
+          <h2>2 · Temas</h2>
+          <div>
+            <button class="btn-link" id="temas-todos">Todos</button> ·
+            <button class="btn-link" id="temas-ninguno">Ninguno</button>
+          </div>
+        </div>
+        <div id="lista-temas" class="temas"></div>
+      </div>
+
+      <div class="tarjeta">
+        <h2>3 · Número de preguntas</h2>
+        <div class="chips" id="chips-num"></div>
+        <p class="muted pequeno" id="info-disponibles"></p>
+        <label class="check">
+          <input type="checkbox" id="solo-fallos">
+          Solo preguntas que he fallado antes (<span id="num-fallos">0</span>)
+        </label>
+        <label class="check" id="fila-penalizar">
+          <input type="checkbox" id="penalizar">
+          Modo examen: los errores restan (−1/(nº opciones − 1))
+        </label>
+      </div>
+
+      <button class="btn btn-primario btn-grande" id="btn-empezar">Empezar test</button>
+
+      <div class="tarjeta" id="tarjeta-historial" hidden>
+        <div class="fila-titulo">
+          <h2>Historial</h2>
+          <button class="btn-link" id="borrar-historial">Borrar</button>
+        </div>
+        <table class="tabla">
+          <thead><tr><th>Fecha</th><th>Modo</th><th>Preg.</th><th>Nota</th><th>Tiempo</th></tr></thead>
+          <tbody id="cuerpo-historial"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= TEST ================= -->
+    <section id="vista-test" class="vista" hidden>
+      <div class="barra-test">
+        <span class="etiqueta" id="etq-modo"></span>
+        <span id="progreso-texto"></span>
+        <span class="crono" id="crono" title="Tiempo">⏱ 00:00</span>
+      </div>
+      <div class="progreso"><div id="progreso-barra"></div></div>
+
+      <div class="tarjeta pregunta">
+        <p class="tema-pregunta" id="tema-pregunta"></p>
+        <h2 id="enunciado"></h2>
+        <div id="opciones" class="opciones"></div>
+        <div id="feedback" class="feedback" hidden></div>
+      </div>
+
+      <div class="acciones">
+        <button class="btn" id="btn-anterior">← Anterior</button>
+        <button class="btn btn-primario" id="btn-siguiente">Siguiente →</button>
+      </div>
+
+      <div class="tarjeta" id="navegador-wrap">
+        <div class="fila-titulo">
+          <h3>Preguntas</h3>
+          <button class="btn btn-peligro" id="btn-entregar">Entregar examen</button>
+        </div>
+        <div id="navegador" class="navegador"></div>
+      </div>
+      <p class="muted pequeno centro">Atajos: teclas 1-4 / A-D para responder, ← → para moverte, Enter para continuar.</p>
+    </section>
+
+    <!-- ================= RESULTADOS ================= -->
+    <section id="vista-resultados" class="vista" hidden>
+      <div class="tarjeta resultado">
+        <p class="muted" id="res-modo"></p>
+        <div class="nota" id="res-nota"></div>
+        <p id="res-mensaje"></p>
+        <div class="stats">
+          <div><strong id="res-aciertos"></strong><span>Aciertos</span></div>
+          <div><strong id="res-fallos"></strong><span>Fallos</span></div>
+          <div><strong id="res-blanco"></strong><span>En blanco</span></div>
+          <div><strong id="res-tiempo"></strong><span>Tiempo</span></div>
+        </div>
+        <p class="muted pequeno" id="res-extra"></p>
+        <div class="acciones">
+          <button class="btn" id="btn-volver">Volver al inicio</button>
+          <button class="btn" id="btn-repetir-fallos">Repetir las falladas</button>
+          <button class="btn btn-primario" id="btn-otro">Otro test igual</button>
+        </div>
+      </div>
+
+      <div class="fila-titulo">
+        <h2>Corrección</h2>
+        <label class="check"><input type="checkbox" id="solo-mal"> Ver solo falladas/en blanco</label>
+      </div>
+      <div id="correccion"></div>
+    </section>
+  </main>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-caja">
+      <p id="modal-texto"></p>
+      <div class="acciones">
+        <button class="btn" id="modal-no">Cancelar</button>
+        <button class="btn btn-primario" id="modal-si">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data/preguntas.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -5,7 +5,9 @@ Aplicación web para estudiar la asignatura **Fundamentos de Podología** (Grado
 ## Funciones
 - **271 preguntas** sacadas de los Kahoots, los cuestionarios Moodle y el temario, organizadas en 7 temas. Cada una lleva su explicación.
 - **Modo estudio**: corrige cada pregunta al momento, marca la respuesta correcta y explica por qué. El cronómetro cuenta hacia arriba.
-- **Modo examen**: las preguntas se corrigen al entregar. Da la nota sobre 10 y tiene un **límite de 1 h 30 min**; al agotarse el tiempo, el examen se entrega solo. Puedes navegar entre preguntas y dejar alguna en blanco. Opcionalmente, los errores restan.
+- **Modo examen**: las preguntas se corrigen al entregar. Da la nota sobre 10 y tiene un **límite de 1 h 30 min**; al agotarse el tiempo, el examen se entrega solo. Antes de empezar se muestran las instrucciones, que también se pueden consultar durante el examen. Puedes navegar entre preguntas y dejar alguna en blanco. Opcionalmente, los errores restan.
+- **Teoría**: apuntes de los 7 temas, con datos clave 🎯, preguntas trampa ⚠️, buscador y un botón para practicar cada tema. Cada pregunta corregida enlaza a la sección donde se explica (ver [`data/teoria.js`](data/teoria.js)).
+- **Móvil**: se puede instalar como app y funciona sin conexión.
 - **Cronómetro** del tiempo empleado en cada test.
 - Preguntas y opciones en orden aleatorio.
 - Filtro por temas y número de preguntas (10, 20, 30, 50 o todas).

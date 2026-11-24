@@ -10,6 +10,7 @@
 //   o: opciones
 //   a: índice (0-based) de la opción correcta
 //   e: explicación / justificación (se muestra al corregir)
+//   ts: (opcional) título de la sección de teoría donde se explica; si falta se calcula sola
 //   src: "kahoot" (pregunta de Kahoot/Moodle/examen) o "temario" (elaborada a partir del temario)
 // ============================================================================
 
@@ -93,7 +94,7 @@ const PREGUNTAS = [
     e: "Es una orden de una Consejería → carácter autonómico." },
   { t: "t2", src: "kahoot", q: "¿Qué área clínica NO encontraremos en una clínica de podología?", o: ["Quirófano", "Sala de rayos", "Taller de ortopodología", "Sala de ortología"], a: 3,
     e: "Áreas: servicio de quiropodología, taller de ortopodología, sala de rayos, sala de exploración/biomecánica y quirófano." },
-  { t: "t2", src: "kahoot", q: "El desarrollo científico en podología se debe, en parte, a su acceso al tercer ciclo de estudios universitarios.", o: VF, a: 0,
+  { t: "t2", src: "kahoot", ts: "El podólogo: ubicaciones, capacidades y clínica", q: "El desarrollo científico en podología se debe, en parte, a su acceso al tercer ciclo de estudios universitarios.", o: VF, a: 0,
     e: "Verdadero. El grado da acceso al doctorado; el futuro de la profesión pasa por la carrera investigadora." },
   { t: "t2", src: "kahoot", q: "NO fomentar el desarrollo de trabajos de investigación que perfeccionen la profesión es una cualificación podológica.", o: VF, a: 1,
     e: "Falso. Fomentar la investigación SÍ es una cualificación podológica." },
@@ -561,9 +562,9 @@ const PREGUNTAS = [
     e: "Clave de clase (marcada como «duda»): afectación de la cadera, por el Patrick (+)." },
   { t: "t4c", src: "temario", q: "La prueba de Thomas valora:", o: ["La movilidad lumbar", "La contractura en flexión de la cadera (músculo ilíaco)", "La inestabilidad de rodilla", "La sacroilíaca"], a: 1,
     e: "Si la cadera no se extiende por completo (la rodilla contralateral se eleva) → contractura en flexión." },
-  { t: "t4c", src: "temario", q: "La flexión pasiva de cadera con rodilla flexionada alcanza:", o: ["90º", "120º", "140º", "160º"], a: 2,
+  { t: "t4c", src: "temario", ts: "Cadera: rangos y prueba de Thomas", q: "La flexión pasiva de cadera con rodilla flexionada alcanza:", o: ["90º", "120º", "140º", "160º"], a: 2,
     e: "Activa: 120º (rodilla flexionada) / 90º (extendida). Pasiva: 140º / 120º." },
-  { t: "t4c", src: "temario", q: "La flexión activa de cadera con la rodilla extendida es de unos:", o: ["90º", "120º", "140º", "30º"], a: 0,
+  { t: "t4c", src: "temario", ts: "Cadera: rangos y prueba de Thomas", q: "La flexión activa de cadera con la rodilla extendida es de unos:", o: ["90º", "120º", "140º", "30º"], a: 0,
     e: "90º (los isquiotibiales limitan)." },
   { t: "t4c", src: "temario", q: "La extensión pasiva de cadera es de unos:", o: ["10º", "20º", "30º", "45º"], a: 2,
     e: "Activa: 10º (rodilla flexionada) / 20º (extendida). Pasiva: 30º." },
@@ -575,7 +576,7 @@ const PREGUNTAS = [
     e: "Retropié: hasta 5º en valgo." },
   { t: "t4c", src: "kahoot", q: "¿Cuántos grados de flexión plantar con rodilla extendida puede alcanzar la TPA?", o: ["30", "45", "15", "35"], a: 1,
     e: "Clave del cuestionario: 45º." },
-  { t: "t4c", src: "kahoot", q: "¿Cuántos grados mínimos de flexión plantar son necesarios para una marcha correcta?", o: ["35", "15", "20", "45"], a: 2,
+  { t: "t4c", src: "kahoot", ts: "Tobillo y subastragalina", q: "¿Cuántos grados mínimos de flexión plantar son necesarios para una marcha correcta?", o: ["35", "15", "20", "45"], a: 2,
     e: "Clave del cuestionario: 20º (el temario habla de 10-20º)." },
   { t: "t4c", src: "kahoot", q: "¿Cuántos grados mínimos de flexión dorsal son necesarios para una marcha correcta?", o: ["45", "10", "20", "35"], a: 1,
     e: "10º." },

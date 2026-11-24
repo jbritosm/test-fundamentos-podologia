@@ -1,9 +1,9 @@
 // Service worker: "red primero, caché de respaldo".
 // Con conexión siempre se carga la última versión (incluidas preguntas nuevas);
 // sin conexión se usa la copia guardada, así se puede estudiar offline.
-const CACHE = "test-podo-v1";
+const CACHE = "test-podo-v2";
 const ARCHIVOS = [
-  "./", "index.html", "styles.css", "app.js", "data/preguntas.js",
+  "./", "index.html", "styles.css", "app.js", "data/preguntas.js", "data/teoria.js",
   "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"
 ];
 

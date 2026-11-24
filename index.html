@@ -30,6 +30,10 @@
       <span class="logo">🦶</span>
       <span><strong>Fundamentos de Podología</strong><small>UCLM · Talavera</small></span>
     </button>
+    <nav class="pestanas" aria-label="Secciones">
+      <button class="pestana activa" id="tab-test">📝 <span>Test</span></button>
+      <button class="pestana" id="tab-teoria">📖 <span>Teoría</span></button>
+    </nav>
     <button class="btn-icono" id="btn-tema" title="Cambiar modo claro/oscuro" aria-label="Cambiar modo claro/oscuro">🌙</button>
   </header>
 
@@ -102,8 +106,40 @@
       </div>
     </section>
 
+    <!-- ================= INSTRUCCIONES DEL EXAMEN ================= -->
+    <section id="vista-instrucciones" class="vista" hidden>
+      <div class="tarjeta instrucciones">
+        <h1>📝 Instrucciones del examen</h1>
+        <div id="instrucciones-contenido"></div>
+        <div class="acciones">
+          <button class="btn" id="btn-instr-volver">← Volver</button>
+          <button class="btn btn-primario" id="btn-instr-empezar">Comenzar examen</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TEORÍA ================= -->
+    <section id="vista-teoria" class="vista" hidden>
+      <div class="aviso-volver" id="aviso-volver" hidden>
+        <span id="aviso-volver-texto"></span>
+        <button class="btn btn-primario" id="btn-volver-origen"></button>
+      </div>
+      <div class="hero">
+        <h1>Apuntes de teoría</h1>
+        <p class="muted">Resumen de todo lo que cae en los test, por temas. <span class="marca-clave">🎯 dato clave</span> <span class="marca-trampa">⚠️ pregunta trampa</span></p>
+      </div>
+      <input type="search" id="buscar-teoria" class="buscador" placeholder="🔍 Buscar en los apuntes (p. ej. Seitz, Schober, 1962…)" autocomplete="off">
+      <div class="chips" id="indice-teoria"></div>
+      <div id="contenido-teoria"></div>
+      <p class="muted centro" id="teoria-vacia" hidden>No hay resultados para esa búsqueda.</p>
+    </section>
+
     <!-- ================= TEST ================= -->
     <section id="vista-test" class="vista" hidden>
+      <details class="tarjeta ayuda-examen" id="ayuda-examen">
+        <summary>ℹ️ Instrucciones del examen</summary>
+        <div id="ayuda-examen-contenido"></div>
+      </details>
       <div class="barra-test">
         <span class="etiqueta" id="etq-modo"></span>
         <span id="progreso-texto"></span>
@@ -115,6 +151,7 @@
         <p class="tema-pregunta" id="tema-pregunta"></p>
         <h2 id="enunciado"></h2>
         <div id="opciones" class="opciones"></div>
+        <button class="btn-link btn-blanco" id="btn-blanco" hidden>⚪ Dejar en blanco</button>
         <div id="feedback" class="feedback" hidden></div>
       </div>
 
@@ -173,6 +210,7 @@
   </div>
 
   <script src="data/preguntas.js"></script>
+  <script src="data/teoria.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

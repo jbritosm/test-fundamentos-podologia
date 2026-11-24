@@ -92,10 +92,17 @@ function confirmar(texto, textoSi = "Aceptar") {
 // =====================================================================
 // Navegación entre vistas
 // =====================================================================
-function mostrar(vista) {
-  for (const v of ["inicio", "test", "resultados"]) $("#vista-" + v).hidden = v !== vista;
-  window.scrollTo({ top: 0 });
+const VISTAS = ["inicio", "instrucciones", "test", "resultados", "teoria"];
+let vistaActual = "inicio";
+function mostrar(vista, { scroll = true } = {}) {
+  for (const v of VISTAS) $("#vista-" + v).hidden = v !== vista;
+  vistaActual = vista;
+  $("#tab-teoria").classList.toggle("activa", vista === "teoria");
+  $("#tab-test").classList.toggle("activa", vista !== "teoria");
+  if (scroll) window.scrollTo({ top: 0 });
 }
+
+const testEnCurso = () => estado && !estado.fin;
 
 // =====================================================================
 // INICIO
@@ -192,7 +199,45 @@ $("#btn-empezar").addEventListener("click", () => {
   store.set("temas", temasSeleccionados());
   const pool = poolActual();
   const n = numElegido === 0 ? pool.length : Math.min(numElegido, pool.length);
-  iniciarTest(barajar(pool).slice(0, n), modoSeleccionado());
+  const preguntas = barajar(pool).slice(0, n);
+  if (modoSeleccionado() === "examen") mostrarInstrucciones(preguntas);
+  else iniciarTest(preguntas, "estudio");
+});
+
+// =====================================================================
+// INSTRUCCIONES DEL EXAMEN
+// =====================================================================
+let examenPendiente = null;
+
+function htmlInstrucciones(n, penalizar) {
+  const resta = penalizar
+    ? `<li>❗ <b>Los errores restan</b>: cada fallo quita 1/(nº de opciones − 1) de pregunta (−1/3 en las de 4 opciones, −1 en las de verdadero/falso). Si dudas mucho, mejor déjala en blanco.</li>`
+    : `<li>Los errores <b>no restan</b>, así que conviene responder todas aunque dudes.</li>`;
+  return `
+<ul class="lista-instr">
+  <li>⏳ Tienes <b>1 hora y 30 minutos</b>. El tiempo restante aparece arriba a la derecha: se pone <span class="aviso-color">naranja</span> en los últimos 10 minutos y <span class="critico-color">rojo</span> en el último.</li>
+  <li>⏰ Si se acaba el tiempo, el examen <b>se entrega automáticamente</b> con lo que tengas respondido.</li>
+  <li>📋 El examen tiene <b>${n} pregunta${n === 1 ? "" : "s"}</b>, cada una con una única respuesta correcta.</li>
+  <li>⚪ <b>Puedes dejar preguntas en blanco</b>: no suman ni restan. Para quitar una respuesta, vuelve a tocar la opción marcada o pulsa «Dejar en blanco».</li>
+  <li>✏️ Puedes <b>cambiar tus respuestas</b> en cualquier momento antes de entregar.</li>
+  <li>🔢 Muévete con «Anterior» y «Siguiente», deslizando la pregunta (en el móvil) o con la cuadrícula de números. Las preguntas ya respondidas aparecen en azul.</li>
+  <li>🙈 <b>No verás si aciertas</b> hasta que entregues. Durante el examen no se puede consultar la teoría.</li>
+  <li>📤 Pulsa <b>«Entregar examen»</b> cuando termines; si quedan preguntas en blanco te avisará antes.</li>
+  <li>🧮 Nota = (aciertos${penalizar ? " − penalización" : ""}) ÷ nº de preguntas × 10. Se aprueba con un <b>5</b>.</li>
+  ${resta}
+  <li>📖 Al final verás la corrección de cada pregunta, con enlace a la parte de la teoría donde se explica.</li>
+</ul>`;
+}
+
+function mostrarInstrucciones(preguntas) {
+  examenPendiente = preguntas;
+  $("#instrucciones-contenido").innerHTML = htmlInstrucciones(preguntas.length, $("#penalizar").checked);
+  mostrar("instrucciones");
+}
+$("#btn-instr-volver").addEventListener("click", () => { examenPendiente = null; mostrar("inicio"); });
+$("#btn-instr-empezar").addEventListener("click", () => {
+  const p = examenPendiente; examenPendiente = null;
+  iniciarTest(p, "examen");
 });
 
 // =====================================================================
@@ -225,6 +270,9 @@ function iniciarTest(preguntas, modo) {
     fuente: preguntas // para "Otro test igual"
   };
   $("#etq-modo").textContent = modo === "examen" ? "📝 Examen" : "📘 Estudio";
+  $("#ayuda-examen").hidden = modo !== "examen";
+  $("#ayuda-examen").open = false;
+  if (modo === "examen") $("#ayuda-examen-contenido").innerHTML = htmlInstrucciones(preguntas.length, estado.penalizar);
   $("#btn-entregar").textContent = modo === "examen" ? "Entregar examen" : "Terminar y ver resumen";
   mostrar("test");
   pintarPregunta();
@@ -286,12 +334,14 @@ function pintarPregunta() {
     fb.append(...[
       el("p", {}, el("strong", {}, ok ? "✅ ¡Correcto!" : "❌ Incorrecto. ")),
       ok ? null : el("p", {}, "Respuesta correcta: ", el("strong", {}, correcta)),
-      p.e ? el("p", { class: "explicacion" }, "💡 " + p.e) : null
+      p.e ? el("p", { class: "explicacion" }, "💡 " + p.e) : null,
+      enlaceTeoria(p.id)
     ].filter(Boolean));
     fb.hidden = false;
   } else {
     fb.hidden = true;
   }
+  $("#btn-blanco").hidden = !(modo === "examen" && resp !== null);
 
   $("#btn-anterior").disabled = actual === 0;
   const ultima = actual === preguntas.length - 1;
@@ -337,6 +387,12 @@ function responder(i) {
     if (r.bottom > window.innerHeight - 90) fb.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 }
+
+$("#btn-blanco").addEventListener("click", () => {
+  if (!estado || estado.modo !== "examen") return;
+  estado.respuestas[estado.actual] = null;
+  pintarPregunta();
+});
 
 function registrarFallo(id, acierto) {
   const fallos = new Set(store.get("fallos", []));
@@ -401,7 +457,7 @@ async function pedirEntrega() {
 }
 
 $("#btn-inicio").addEventListener("click", async () => {
-  if (estado && !estado.fin && !$("#vista-test").hidden) {
+  if (testEnCurso()) {
     if (!(await confirmar("¿Salir del test? Se perderá el progreso.", "Salir"))) return;
     clearInterval(intervalo);
     estado = null;
@@ -416,6 +472,9 @@ document.addEventListener("keydown", (ev) => {
   const k = ev.key.toLowerCase();
   const idx = "1234".indexOf(k) >= 0 ? "1234".indexOf(k) : "abcd".indexOf(k);
   if (idx >= 0 && idx < estado.preguntas[estado.actual].opciones.length) { responder(idx); return; }
+  if ((ev.key === "Delete" || ev.key === "Backspace" || ev.key === "0") && estado.modo === "examen") {
+    estado.respuestas[estado.actual] = null; pintarPregunta(); return;
+  }
   if (ev.key === "ArrowRight") irA(estado.actual + 1);
   else if (ev.key === "ArrowLeft") irA(estado.actual - 1);
   else if (ev.key === "Enter") { ev.preventDefault(); $("#btn-siguiente").click(); }
@@ -489,7 +548,8 @@ function pintarCorreccion() {
     cont.append(el("div", { class: "tarjeta item-correccion " + tipo },
       el("p", { class: "tema-pregunta" }, `${i + 1}. ${etiqueta} · ${NOMBRE_TEMA[p.t]}`),
       el("h3", {}, p.q), ul,
-      p.e ? el("p", { class: "explicacion" }, "💡 " + p.e) : null));
+      p.e ? el("p", { class: "explicacion" }, "💡 " + p.e) : null,
+      enlaceTeoria(p.id)));
   });
   if (!cont.children.length) cont.append(el("p", { class: "muted centro" }, "¡No hay preguntas falladas! 🎉"));
 }
@@ -508,6 +568,173 @@ $("#btn-repetir-fallos").addEventListener("click", () => {
     return r === null || !p.opciones[r].correcta;
   }).map((p) => p.id));
   iniciarTest(barajar(BANCO.filter((p) => ids.has(p.id))), estado.modo);
+});
+
+// =====================================================================
+// TEORÍA
+// =====================================================================
+const normalizar = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const quitarHtml = (h) => h.replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g, " ");
+const idSeccion = (tema, i) => `teo-${tema}-${i}`;
+
+// Índice plano de secciones con su texto normalizado (para búsqueda y enlaces)
+const SECCIONES = [];
+for (const bloque of TEORIA) {
+  bloque.secciones.forEach((s, i) => {
+    SECCIONES.push({
+      tema: bloque.tema, idx: i, id: idSeccion(bloque.tema, i), titulo: s.titulo,
+      texto: normalizar(s.titulo + " " + s.titulo + " " + quitarHtml(s.html))
+    });
+  });
+}
+
+// --- Enlace pregunta → sección: la sección del mismo tema con más palabras en común,
+//     ponderadas por lo poco frecuentes que son (IDF). Se calcula al cargar.
+const STOP = new Set(("que con los las del por una uno unos unas para como mas sus son esta este estos estas ese esa " +
+  "cual cuales cuando donde entre sobre segun hasta desde tiene tienen puede pueden hay ser sin muy tambien " +
+  "todas todos todo toda otra otro otras otros dicho siempre nunca solo sola respecto parte forma modo caso " +
+  "verdadero falso correcta correcto incorrecta afirmacion siguientes observas imagen kahoot clave pregunta " +
+  "respuesta opcion opciones anteriores ninguna alguna podemos podriamos estamos frente denomina llama").split(" "));
+const tokens = (s) => normalizar(s).split(/[^a-z0-9ºª]+/).filter((w) => (w.length >= 3 || /^\d+$/.test(w)) && !STOP.has(w));
+
+const tokSecciones = SECCIONES.map((s) => new Set(tokens(s.texto)));
+const df = new Map();
+for (const set of tokSecciones) for (const w of set) df.set(w, (df.get(w) || 0) + 1);
+const idf = (w) => Math.log((SECCIONES.length + 1) / ((df.get(w) || 0) + 0.5));
+
+const SECCION_DE = new Map();
+for (const p of BANCO) {
+  if (p.ts) { // sección indicada a mano en preguntas.js
+    const s = SECCIONES.find((x) => x.tema === p.t && x.titulo === p.ts);
+    if (s) { SECCION_DE.set(p.id, s); continue; }
+  }
+  const texto = p.q + " " + p.o[p.a] + " " + p.o[p.a] + " " + (p.e || "");
+  const qt = new Set(tokens(texto));
+  let mejor = null, mejorScore = -1;
+  SECCIONES.forEach((s, k) => {
+    if (s.tema !== p.t) return;
+    let score = 0;
+    for (const w of qt) if (tokSecciones[k].has(w)) score += idf(w);
+    if (score > mejorScore) { mejorScore = score; mejor = s; }
+  });
+  if (mejor) SECCION_DE.set(p.id, mejor);
+}
+
+function enlaceTeoria(idPregunta) {
+  const s = SECCION_DE.get(idPregunta);
+  if (!s) return null;
+  return el("p", { class: "enlace-teoria" },
+    el("a", { href: "#" + s.id, onclick: (ev) => { ev.preventDefault(); abrirTeoria(s.id); } },
+      "📖 Teoría: " + s.titulo + " →"));
+}
+
+let teoriaPintada = false;
+let origenTeoria = null; // vista desde la que se llegó (para «Volver»)
+
+function pintarTeoria() {
+  const indice = $("#indice-teoria");
+  const cont = $("#contenido-teoria");
+  indice.innerHTML = ""; cont.innerHTML = "";
+  for (const bloque of TEORIA) {
+    const nombre = NOMBRE_TEMA[bloque.tema];
+    indice.append(el("button", { class: "chip", onclick: () => {
+      document.getElementById("tema-" + bloque.tema).scrollIntoView({ behavior: "smooth", block: "start" });
+    } }, nombre.split("·")[0].trim()));
+
+    const nPreg = BANCO.filter((p) => p.t === bloque.tema).length;
+    const seccion = el("section", { class: "bloque-teoria", id: "tema-" + bloque.tema },
+      el("div", { class: "cabecera-tema" },
+        el("h2", {}, nombre),
+        el("p", { class: "muted" }, bloque.intro),
+        el("button", { class: "btn btn-primario", onclick: () => practicarTema(bloque.tema) },
+          `✍️ Practicar este tema (${nPreg} preguntas)`)));
+    bloque.secciones.forEach((s, i) => {
+      const det = el("details", { class: "tarjeta seccion-teoria", id: idSeccion(bloque.tema, i) },
+        el("summary", {}, s.titulo));
+      const cuerpo = el("div", { class: "cuerpo-teoria" });
+      cuerpo.innerHTML = s.html;
+      det.append(cuerpo);
+      seccion.append(det);
+    });
+    cont.append(seccion);
+  }
+  teoriaPintada = true;
+}
+
+function pintarAvisoVolver() {
+  const aviso = $("#aviso-volver");
+  if (testEnCurso()) {
+    aviso.hidden = false;
+    $("#aviso-volver-texto").textContent = `Tienes un test de estudio en curso (pregunta ${estado.actual + 1} de ${estado.preguntas.length}).`;
+    $("#btn-volver-origen").textContent = "Volver al test →";
+    $("#btn-volver-origen").onclick = () => { mostrar("test"); pintarPregunta(); };
+  } else if (origenTeoria === "resultados" && estado) {
+    aviso.hidden = false;
+    $("#aviso-volver-texto").textContent = "Estabas revisando la corrección del test.";
+    $("#btn-volver-origen").textContent = "Volver a la corrección →";
+    $("#btn-volver-origen").onclick = () => mostrar("resultados");
+  } else {
+    aviso.hidden = true;
+  }
+}
+
+async function abrirTeoria(idSec) {
+  if (testEnCurso() && estado.modo === "examen") {
+    await confirmar("Durante el examen no se puede consultar la teoría. Entrégalo primero 😉", "Entendido");
+    return;
+  }
+  if (!teoriaPintada) pintarTeoria();
+  if (vistaActual !== "teoria") origenTeoria = vistaActual;
+  $("#buscar-teoria").value = "";
+  filtrarTeoria();
+  pintarAvisoVolver();
+  mostrar("teoria", { scroll: !idSec });
+  if (idSec) {
+    const d = document.getElementById(idSec);
+    d.open = true;
+    d.classList.remove("resaltada"); void d.offsetWidth; d.classList.add("resaltada");
+    requestAnimationFrame(() => {
+      const top = d.getBoundingClientRect().top + window.scrollY - 70;
+      window.scrollTo({ top, behavior: "smooth" });
+    });
+  }
+}
+
+function filtrarTeoria() {
+  const q = normalizar($("#buscar-teoria").value.trim());
+  let visibles = 0;
+  document.querySelectorAll(".seccion-teoria").forEach((d) => {
+    const s = SECCIONES.find((x) => x.id === d.id);
+    const ok = !q || s.texto.includes(q);
+    d.hidden = !ok;
+    if (q) d.open = ok;
+    if (ok) visibles++;
+  });
+  document.querySelectorAll(".bloque-teoria").forEach((b) => {
+    b.hidden = !!q && !b.querySelector(".seccion-teoria:not([hidden])");
+  });
+  $("#teoria-vacia").hidden = visibles > 0;
+}
+$("#buscar-teoria").addEventListener("input", filtrarTeoria);
+
+function practicarTema(tema) {
+  if (testEnCurso()) {
+    confirmar("Ya tienes un test en curso. ¿Empezar uno nuevo de este tema? Se perderá el progreso.", "Empezar").then((ok) => {
+      if (ok) { clearInterval(intervalo); estado = null; practicarTema(tema); }
+    });
+    return;
+  }
+  const pool = BANCO.filter((p) => p.t === tema);
+  const n = numElegido === 0 ? pool.length : Math.min(numElegido, pool.length);
+  iniciarTest(barajar(pool).slice(0, n), "estudio");
+}
+
+$("#tab-teoria").addEventListener("click", () => abrirTeoria(null));
+$("#tab-test").addEventListener("click", () => {
+  if (vistaActual !== "teoria") return;
+  if (testEnCurso()) { mostrar("test"); pintarPregunta(); }
+  else if (origenTeoria === "resultados" && estado) mostrar("resultados");
+  else { pintarInicio(); mostrar("inicio"); }
 });
 
 // =====================================================================

@@ -2,9 +2,17 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Test · Fundamentos de Podología (UCLM)</title>
   <meta name="description" content="Aplicación de estudio con preguntas tipo test de Fundamentos de Podología (UCLM).">
+  <meta name="theme-color" content="#2f6fdb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#18202c" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Test Podo">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦶</text></svg>">
   <link rel="stylesheet" href="styles.css">
   <script>
@@ -85,10 +93,12 @@
           <h2>Historial</h2>
           <button class="btn-link" id="borrar-historial">Borrar</button>
         </div>
-        <table class="tabla">
-          <thead><tr><th>Fecha</th><th>Modo</th><th>Preg.</th><th>Nota</th><th>Tiempo</th></tr></thead>
-          <tbody id="cuerpo-historial"></tbody>
-        </table>
+        <div class="tabla-wrap">
+          <table class="tabla">
+            <thead><tr><th>Fecha</th><th>Modo</th><th>Preg.</th><th>Nota</th><th>Tiempo</th></tr></thead>
+            <tbody id="cuerpo-historial"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -108,7 +118,7 @@
         <div id="feedback" class="feedback" hidden></div>
       </div>
 
-      <div class="acciones">
+      <div class="acciones barra-inferior">
         <button class="btn" id="btn-anterior">← Anterior</button>
         <button class="btn btn-primario" id="btn-siguiente">Siguiente →</button>
       </div>
@@ -120,7 +130,8 @@
         </div>
         <div id="navegador" class="navegador"></div>
       </div>
-      <p class="muted pequeno centro">Atajos: teclas 1-4 / A-D para responder, ← → para moverte, Enter para continuar.</p>
+      <p class="muted pequeno centro solo-escritorio">Atajos: teclas 1-4 / A-D para responder, ← → para moverte, Enter para continuar.</p>
+      <p class="muted pequeno centro solo-tactil">Consejo: desliza la pregunta a izquierda o derecha para cambiar de pregunta.</p>
     </section>
 
     <!-- ================= RESULTADOS ================= -->

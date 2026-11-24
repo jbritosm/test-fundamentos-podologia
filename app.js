@@ -59,7 +59,13 @@ const NOMBRE_TEMA = Object.fromEntries(TEMAS.map((t) => [t.id, t.nombre]));
 // Tema claro / oscuro
 // =====================================================================
 function pintarBotonTema() {
-  $("#btn-tema").textContent = document.documentElement.dataset.tema === "oscuro" ? "☀️" : "🌙";
+  const oscuro = document.documentElement.dataset.tema === "oscuro";
+  $("#btn-tema").textContent = oscuro ? "☀️" : "🌙";
+  // Color de la barra del navegador en el móvil acorde al tema elegido
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+    m.setAttribute("content", oscuro ? "#18202c" : "#2f6fdb");
+    m.removeAttribute("media");
+  });
 }
 $("#btn-tema").addEventListener("click", () => {
   const nuevo = document.documentElement.dataset.tema === "oscuro" ? "claro" : "oscuro";
@@ -277,9 +283,11 @@ function pintarPregunta() {
     const correcta = p.opciones.find((o) => o.correcta).texto;
     fb.className = "feedback " + (ok ? "ok" : "mal");
     fb.innerHTML = "";
-    fb.append(el("p", {}, el("strong", {}, ok ? "✅ ¡Correcto!" : "❌ Incorrecto. ")),
+    fb.append(...[
+      el("p", {}, el("strong", {}, ok ? "✅ ¡Correcto!" : "❌ Incorrecto. ")),
       ok ? null : el("p", {}, "Respuesta correcta: ", el("strong", {}, correcta)),
-      p.e ? el("p", { class: "explicacion" }, "💡 " + p.e) : null);
+      p.e ? el("p", { class: "explicacion" }, "💡 " + p.e) : null
+    ].filter(Boolean));
     fb.hidden = false;
   } else {
     fb.hidden = true;
@@ -322,6 +330,12 @@ function responder(i) {
     respuestas[actual] = respuestas[actual] === i ? null : i; // clic de nuevo = dejar en blanco
   }
   pintarPregunta();
+  if (modo === "estudio") {
+    // En pantallas pequeñas, que se vea la explicación sin tener que buscarla
+    const fb = $("#feedback");
+    const r = fb.getBoundingClientRect();
+    if (r.bottom > window.innerHeight - 90) fb.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 }
 
 function registrarFallo(id, acierto) {
@@ -331,10 +345,40 @@ function registrarFallo(id, acierto) {
 }
 
 function irA(i) {
-  if (i < 0 || i >= estado.preguntas.length) return;
+  if (i < 0 || i >= estado.preguntas.length || i === estado.actual) return;
+  const adelante = i > estado.actual;
   estado.actual = i;
   pintarPregunta();
+  const card = $(".pregunta");
+  card.classList.remove("entra-der", "entra-izq");
+  void card.offsetWidth; // reinicia la animación
+  card.classList.add(adelante ? "entra-der" : "entra-izq");
+  // Si la pregunta quedó fuera de la vista (móvil), subir hasta ella
+  const top = card.getBoundingClientRect().top;
+  if (top < 0 || top > window.innerHeight * 0.4) {
+    window.scrollTo({ top: window.scrollY + top - 70, behavior: "smooth" });
+  }
 }
+
+// Deslizar a izquierda/derecha sobre la pregunta para cambiar de pregunta
+(function activarSwipe() {
+  const card = $(".pregunta");
+  let x0 = null, y0 = null, t0 = 0;
+  card.addEventListener("touchstart", (ev) => {
+    if (ev.touches.length !== 1) return;
+    x0 = ev.touches[0].clientX; y0 = ev.touches[0].clientY; t0 = Date.now();
+  }, { passive: true });
+  card.addEventListener("touchend", (ev) => {
+    if (x0 === null || !estado) return;
+    const dx = ev.changedTouches[0].clientX - x0;
+    const dy = ev.changedTouches[0].clientY - y0;
+    x0 = null;
+    if (Date.now() - t0 > 700) return;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      irA(estado.actual + (dx < 0 ? 1 : -1));
+    }
+  }, { passive: true });
+})();
 
 $("#btn-anterior").addEventListener("click", () => irA(estado.actual - 1));
 $("#btn-siguiente").addEventListener("click", () => {
@@ -469,3 +513,8 @@ $("#btn-repetir-fallos").addEventListener("click", () => {
 // =====================================================================
 pintarInicio();
 mostrar("inicio");
+
+// Instalable en el móvil y uso sin conexión (solo cuando se sirve por http/https)
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
